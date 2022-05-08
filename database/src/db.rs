@@ -1,16 +1,17 @@
 use crate::entry::Entry;
 use std::fs;
+use std::time::SystemTime;
 
 pub trait DB {
     fn create(&mut self, e: Entry) -> Result<Entry, String>;
-    fn update(&mut self, id: u16, e: Entry) -> Result<Entry, String>;
+    fn update(&mut self, id: u16, e: Entry) -> Result<(), String>;
     fn delete(&mut self, id: u16) -> Result<Entry, String>;
     fn read_all(&self) -> Vec<Entry>;
     fn read_by_id(&self, id: u16) -> Option<Entry>;
     fn search(&self, term: String) -> Vec<Entry>;
 }
 
-struct FileDB {
+pub struct FileDB {
     path: String,
     entries: Vec<Entry>,
 }
@@ -53,16 +54,44 @@ impl FileDB {
 }
 
 impl DB for FileDB {
-    fn create(&mut self, e: Entry) -> Result<Entry, String> {
-        todo!()
+    fn create(&mut self, mut e: Entry) -> Result<Entry, String> {
+        let next_id = match self.entries.iter().map(|x| x.id).max() {
+            Some(x) => x + 1,
+            None => 1,
+        };
+        e.id = next_id;
+        self.entries.push(e.clone());
+        match self.save() {
+            Ok(()) => (),
+            Err(err) => return Err(err),
+        };
+        Ok(e)
     }
 
-    fn update(&mut self, id: u16, e: Entry) -> Result<Entry, String> {
-        todo!()
+    fn update(&mut self, id: u16, e: Entry) -> Result<(), String> {
+        let to_update = match self.entries.iter_mut().find(|x| (**x).id == id) {
+            Some(x) => x,
+            None => return Err(format!("could not find entry with ID {}", id)),
+        };
+        to_update.first_name = e.first_name;
+        to_update.last_name = e.last_name;
+        to_update.phone = e.phone;
+        to_update.address = e.address;
+        to_update.e_mail = e.e_mail;
+        to_update.updated_at = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        self.save()
     }
 
     fn delete(&mut self, id: u16) -> Result<Entry, String> {
-        let entry_index = match self.entries.iter().enumerate().find(|(i, e)| (*e).id == id) {
+        let entry_index = match self
+            .entries
+            .iter()
+            .enumerate()
+            .find(|(_i, e)| (*e).id == id)
+        {
             Some((i, _)) => i,
             None => return Err(format!("could not find entry with ID {}", id)),
         };

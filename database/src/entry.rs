@@ -5,8 +5,8 @@ pub struct Entry {
     pub phone: String,
     pub address: String,
     pub e_mail: String,
-    pub created_at: u32,
-    pub updated_at: u32,
+    pub created_at: u64,
+    pub updated_at: u64,
 }
 
 impl Entry {
@@ -23,7 +23,7 @@ impl Entry {
                 return Err(err);
             }
         };
-        let created_at = match parts[6].parse::<u32>() {
+        let created_at = match parts[6].parse::<u64>() {
             Ok(x) => x,
             Err(e) => {
                 let mut err = "failed to parse created_at: ".to_string();
@@ -31,7 +31,7 @@ impl Entry {
                 return Err(err);
             }
         };
-        let updated_at = match parts[7].parse::<u32>() {
+        let updated_at = match parts[7].parse::<u64>() {
             Ok(x) => x,
             Err(e) => {
                 let mut err = "failed to parse updated_at: ".to_string();
@@ -39,7 +39,7 @@ impl Entry {
                 return Err(err);
             }
         };
-        Ok(Entry{
+        Ok(Entry {
             id,
             first_name: parts[1].to_string(),
             last_name: parts[2].to_string(),
@@ -59,14 +59,15 @@ impl Entry {
             self.address.as_str(),
             self.e_mail.as_str(),
             format!("{}", self.created_at).as_str(),
-            format!("{}", self.updated_at).as_str()
-        ].join(";")
+            format!("{}", self.updated_at).as_str(),
+        ]
+        .join(";")
     }
 }
 
 impl Clone for Entry {
     fn clone(&self) -> Self {
-        Entry{
+        Entry {
             id: self.id.clone(),
             first_name: self.first_name.clone(),
             last_name: self.last_name.clone(),
@@ -74,7 +75,7 @@ impl Clone for Entry {
             address: self.address.clone(),
             e_mail: self.e_mail.clone(),
             created_at: self.created_at.clone(),
-            updated_at: self.updated_at.clone()
+            updated_at: self.updated_at.clone(),
         }
     }
 

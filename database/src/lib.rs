@@ -1,5 +1,8 @@
-mod entry;
 mod db;
+mod entry;
+
+pub use db::FileDB;
+pub use db::DB;
 
 #[cfg(test)]
 mod tests {
