@@ -3,6 +3,7 @@ mod entry;
 
 pub use db::FileDB;
 pub use db::DB;
+pub use entry::Entry;
 
 #[cfg(test)]
 mod tests {
