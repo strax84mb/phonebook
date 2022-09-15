@@ -3,12 +3,12 @@
 version = 3
 
 [[package]]
-name = "cli"
+name = "database"
+version = "0.1.0"
+
+[[package]]
+name = "phonebook"
 version = "0.1.0"
 dependencies = [
  "database",
 ]
-
-[[package]]
-name = "database"
-version = "0.1.0"

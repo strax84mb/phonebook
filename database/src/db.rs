@@ -27,7 +27,7 @@ impl FileDB {
             }
         };
         let entries: Vec<Entry> = content
-            .split(';')
+            .split('\n')
             .map(|s| Entry::from(s))
             .filter(|r| r.is_ok())
             .map(|r| r.unwrap())
@@ -55,11 +55,20 @@ impl FileDB {
 
 impl DB for FileDB {
     fn create(&mut self, mut e: Entry) -> Result<Entry, String> {
+        // generate ID
         let next_id = match self.entries.iter().map(|x| x.id).max() {
             Some(x) => x + 1,
             None => 1,
         };
         e.id = next_id;
+        // set timestamps
+        let now = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        e.updated_at = now;
+        e.created_at = now;
+        // push and save
         self.entries.push(e.clone());
         match self.save() {
             Ok(()) => (),

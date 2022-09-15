@@ -53,6 +53,7 @@ impl Entry {
 
     pub fn to_string(&self) -> String {
         [
+            format!("{}", self.id).as_str(),
             self.first_name.as_str(),
             self.last_name.as_str(),
             self.phone.as_str(),

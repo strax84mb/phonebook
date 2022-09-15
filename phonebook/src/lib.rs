@@ -68,6 +68,7 @@ fn parse_arguments(args: Vec<String>) -> Result<Parameters, String> {
         ..Default::default()
     };
     let mut it = args.iter();
+    it.next();
     let mut param_name: String;
     let mut param_value: String;
     let mut param_type: ArgString;
@@ -134,90 +135,98 @@ pub fn execute(args: Vec<String>) {
     let parameters = parse_arguments(args);
     match parameters {
         Ok(p) => {
-            match FileDB::new(p.database_path.clone()) {
-                Ok(mut db) => match p.operation {
-                    Operation::Create => {
-                        match check_create_params(&p) {
-                            Err(e) => {
-                                println!("Error: {}", e);
-                                print_help_create();
-                                std::process::exit(1);
-                            }
-                            _ => (),
-                        };
-                        match db.create(p.to_entry()) {
-                            Ok(entry) => {
-                                println!("Successfully created entry");
-                                print_single_entry(&entry);
-                            }
-                            Err(msg) => {
-                                println!("Error: {}", msg);
-                                std::process::exit(1);
-                            }
-                        }
-                    }
-                    Operation::Update => {
-                        match check_create_params(&p) {
-                            Err(e) => {
-                                println!("Error: {}", e);
-                                print_help_delete();
-                                std::process::exit(1);
-                            }
-                            _ => (),
-                        };
-                        match db.update(p.id, p.to_entry()) {
-                            Ok(entry) => {
-                                println!("Successfully updated entry");
-                                print_single_entry(&entry);
-                            }
-                            Err(msg) => {
-                                println!("Error: {}", msg);
-                                std::process::exit(1);
-                            }
-                        }
-                    }
-                    Operation::Delete => {
-                        match check_delete_params(&p) {
-                            Err(e) => {
-                                println!("Error: {}", e);
-                                print_help_delete();
-                                std::process::exit(1);
-                            }
-                            _ => (),
-                        };
-                        match db.delete(p.id) {
-                            Ok(entry) => {
-                                println!("Successfully deleted entry");
-                                print_single_entry(&entry);
-                            }
-                            Err(msg) => {
-                                println!("Error: {}", msg);
-                                std::process::exit(1);
-                            }
-                        };
-                    }
-                    Operation::Search => {
-                        match check_search_params(&p) {
-                            Err(e) => {
-                                println!("Error: {}", e);
-                                print_help_search();
-                                std::process::exit(1);
-                            }
-                            _ => (),
-                        };
-                        print_all_entries(db.search(p.search_term));
-                    }
-                    Operation::Help => print_help_msg(),
-                    Operation::None => {
-                        println!("Error: Unsupported command");
-                        std::process::exit(1);
-                    }
-                },
-                Err(msg) => {
-                    println!("Error: {}", msg);
+            match p.operation {
+                Operation::Help => print_help_msg(),
+                Operation::None => {
+                    println!("Error: Unsupported command");
                     std::process::exit(1);
                 }
-            };
+                _ => {
+                    match FileDB::new(p.database_path.clone()) {
+                        Ok(mut db) => match p.operation {
+                            Operation::Create => {
+                                match check_create_params(&p) {
+                                    Err(e) => {
+                                        println!("Error: {}", e);
+                                        print_help_create();
+                                        std::process::exit(1);
+                                    }
+                                    _ => (),
+                                };
+                                match db.create(p.to_entry()) {
+                                    Ok(entry) => {
+                                        println!("Successfully created entry");
+                                        print_single_entry(&entry);
+                                    }
+                                    Err(msg) => {
+                                        println!("Error: {}", msg);
+                                        std::process::exit(1);
+                                    }
+                                }
+                            }
+                            Operation::Update => {
+                                match check_create_params(&p) {
+                                    Err(e) => {
+                                        println!("Error: {}", e);
+                                        print_help_delete();
+                                        std::process::exit(1);
+                                    }
+                                    _ => (),
+                                };
+                                match db.update(p.id, p.to_entry()) {
+                                    Ok(entry) => {
+                                        println!("Successfully updated entry");
+                                        print_single_entry(&entry);
+                                    }
+                                    Err(msg) => {
+                                        println!("Error: {}", msg);
+                                        std::process::exit(1);
+                                    }
+                                }
+                            }
+                            Operation::Delete => {
+                                match check_delete_params(&p) {
+                                    Err(e) => {
+                                        println!("Error: {}", e);
+                                        print_help_delete();
+                                        std::process::exit(1);
+                                    }
+                                    _ => (),
+                                };
+                                match db.delete(p.id) {
+                                    Ok(entry) => {
+                                        println!("Successfully deleted entry");
+                                        print_single_entry(&entry);
+                                    }
+                                    Err(msg) => {
+                                        println!("Error: {}", msg);
+                                        std::process::exit(1);
+                                    }
+                                };
+                            }
+                            Operation::Search => {
+                                match check_search_params(&p) {
+                                    Err(e) => {
+                                        println!("Error: {}", e);
+                                        print_help_search();
+                                        std::process::exit(1);
+                                    }
+                                    _ => (),
+                                };
+                                print_all_entries(db.search(p.search_term));
+                            }
+                            _ => {
+                                println!("Error: Thist code should be unreachable");
+                                std::process::exit(1);
+                            }
+                        },
+                        Err(msg) => {
+                            println!("Error: {}", msg);
+                            std::process::exit(1);
+                        }
+                    };
+                }
+            }
         }
         Err(msg) => {
             println!("Error: {}", msg);
@@ -346,22 +355,22 @@ fn print_entry_line(entry: &Entry, line_number: usize) -> bool {
     if temp && !has_more {
         has_more = true;
     }
-    print!("|");
+    println!("|");
 
     has_more
 }
 
 fn print_entry_field(value: &String, line_number: usize, available_width: usize) -> bool {
     if value.len() <= available_width * line_number {
-        println!("{:<available_width$}", " ");
+        print!("{:<available_width$}", " ");
         return false;
     } else if value.len() > available_width * (line_number + 1) {
         let sub_str: String = value.clone().chars().skip(available_width * line_number).take(available_width).collect();
-        println!("{}", sub_str);
+        print!("{}", sub_str);
         return true;
     } else {
         let sub_str: String = value.clone().chars().skip(available_width * line_number).take(value.len() - (available_width * line_number)).collect();
-        println!("{:<available_width$}", sub_str);
+        print!("{:<available_width$}", sub_str);
         return false;
     }
 }
@@ -394,5 +403,43 @@ fn check_create_params(p: &Parameters) -> Result<(), String> {
         true if p.last_name.eq("") || p.last_name.eq("--")  => return Err("last name must be stated".to_string()),
         true if p.phone.eq("") || p.phone.eq("--") => return Err("phone number must be stated".to_string()),
         _ => Ok(()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn generate_create_params() -> Parameters{
+        Parameters{
+            id: 1,
+            first_name: "John".to_string(),
+            last_name: "Smith".to_string(),
+            phone: "123".to_string(),
+            operation: Operation::Create,
+            address: "Wild west".to_string(),
+            e_mail: "js@gmail.com".to_string(),
+            database_path: "/some/path".to_string(),
+            search_term: "".to_string()
+        }
+    }
+
+    #[test]
+    fn check_good_delete_params() {
+        let p = generate_create_params();
+        match check_create_params(&p) {
+            Err(_msg) => panic!("This should be successful!"),
+            Ok(()) => {}
+        }
+    }
+
+    #[test]
+    fn fail_create_params_missing_first_name() {
+        let mut p = generate_create_params();
+        p.first_name = String::from("");
+        match check_create_params(&p) {
+            Ok(()) => panic!("This should fail!"),
+            Err(msg) => assert_eq!("first name must be stated".to_string(), msg)
+        }
     }
 }
