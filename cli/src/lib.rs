@@ -156,7 +156,26 @@ pub fn execute(args: Vec<String>) {
                             }
                         }
                     }
-                    Operation::Update => {}
+                    Operation::Update => {
+                        match check_create_params(&p) {
+                            Err(e) => {
+                                println!("Error: {}", e);
+                                print_help_delete();
+                                std::process::exit(1);
+                            }
+                            _ => (),
+                        };
+                        match db.update(p.id, p.to_entry()) {
+                            Ok(entry) => {
+                                println!("Successfully updated entry");
+                                print_single_entry(&entry);
+                            }
+                            Err(msg) => {
+                                println!("Error: {}", msg);
+                                std::process::exit(1);
+                            }
+                        }
+                    }
                     Operation::Delete => {
                         match check_delete_params(&p) {
                             Err(e) => {
@@ -186,8 +205,7 @@ pub fn execute(args: Vec<String>) {
                             }
                             _ => (),
                         };
-                        db.search(p.search_term);
-                        todo!("Print all entries")
+                        print_all_entries(db.search(p.search_term));
                     }
                     Operation::Help => print_help_msg(),
                     Operation::None => {
@@ -255,6 +273,99 @@ fn print_single_entry(entry: &Entry) {
     println!("    E-mail: {}", entry.e_mail);
 }
 
+fn print_all_entries(entries: Vec<Entry>) {
+    match entries.len() {
+        0 => println!("No entries to show"),
+        _ => {
+            print_entry_table_separator();
+            print_entry_lines_header();
+            print_entry_table_separator();
+            for e in entries.iter() {
+                print_entry_as_lines(e);
+            }
+            print_entry_table_separator();
+        }
+    }
+}
+
+fn print_entry_lines_header() {
+    /*
+    ID: 5
+    FN: 10
+    LN: 15
+    PH: 15
+    AD: 20
+    EM: 20
+    */
+    println!("| ID  |First name|   Last name   |  Phone book   |       Address      |       E-mail       |");
+}
+
+fn print_entry_table_separator() {
+    println!("+-----+----------+---------------+---------------+--------------------+--------------------+");
+}
+
+fn print_entry_as_lines(entry: &Entry) {
+    let mut has_more: bool;
+    let mut i: usize = 0;
+    loop {
+        has_more = print_entry_line(entry, i);
+        if !has_more {
+            break;
+        }
+        i = i + 1;
+    }
+}
+
+fn print_entry_line(entry: &Entry, line_number: usize) -> bool {
+    let mut has_more: bool;
+    let mut temp: bool;
+    print!("|");
+    has_more = print_entry_field(&format!("{}", entry.id), line_number, 5);
+    print!("|");
+    temp = print_entry_field(&entry.first_name, line_number, 10);
+    if temp && !has_more {
+        has_more = true;
+    }
+    print!("|");
+    temp = print_entry_field(&entry.last_name, line_number, 15);
+    if temp && !has_more {
+        has_more = true;
+    }
+    print!("|");
+    temp = print_entry_field(&entry.phone, line_number, 15);
+    if temp && !has_more {
+        has_more = true;
+    }
+    print!("|");
+    temp = print_entry_field(&entry.address, line_number, 20);
+    if temp && !has_more {
+        has_more = true;
+    }
+    print!("|");
+    temp = print_entry_field(&entry.e_mail, line_number, 20);
+    if temp && !has_more {
+        has_more = true;
+    }
+    print!("|");
+
+    has_more
+}
+
+fn print_entry_field(value: &String, line_number: usize, available_width: usize) -> bool {
+    if value.len() <= available_width * line_number {
+        println!("{:<available_width$}", " ");
+        return false;
+    } else if value.len() > available_width * (line_number + 1) {
+        let sub_str: String = value.clone().chars().skip(available_width * line_number).take(available_width).collect();
+        println!("{}", sub_str);
+        return true;
+    } else {
+        let sub_str: String = value.clone().chars().skip(available_width * line_number).take(value.len() - (available_width * line_number)).collect();
+        println!("{:<available_width$}", sub_str);
+        return false;
+    }
+}
+
 fn check_param_id(id: u16) -> Result<(), String> {
     if id <= 0 {
         return Err("id must be stated and it must be a positive number".to_string());
@@ -279,9 +390,9 @@ fn check_search_params(p: &Parameters) -> Result<(), String> {
 
 fn check_create_params(p: &Parameters) -> Result<(), String> {
     match true {
-        true if p.first_name.eq("") => return Err("first name must be stated".to_string()),
-        true if p.last_name.eq("") => return Err("last name must be stated".to_string()),
-        true if p.phone.eq("") => return Err("phone number must be stated".to_string()),
+        true if p.first_name.eq("") || p.first_name.eq("--") => return Err("first name must be stated".to_string()),
+        true if p.last_name.eq("") || p.last_name.eq("--")  => return Err("last name must be stated".to_string()),
+        true if p.phone.eq("") || p.phone.eq("--") => return Err("phone number must be stated".to_string()),
         _ => Ok(()),
     }
 }

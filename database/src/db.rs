@@ -4,7 +4,7 @@ use std::time::SystemTime;
 
 pub trait DB {
     fn create(&mut self, e: Entry) -> Result<Entry, String>;
-    fn update(&mut self, id: u16, e: Entry) -> Result<(), String>;
+    fn update(&mut self, id: u16, e: Entry) -> Result<Entry, String>;
     fn delete(&mut self, id: u16) -> Result<Entry, String>;
     fn read_all(&self) -> Vec<Entry>;
     fn read_by_id(&self, id: u16) -> Option<Entry>;
@@ -68,7 +68,7 @@ impl DB for FileDB {
         Ok(e)
     }
 
-    fn update(&mut self, id: u16, e: Entry) -> Result<(), String> {
+    fn update(&mut self, id: u16, e: Entry) -> Result<Entry, String> {
         let to_update = match self.entries.iter_mut().find(|x| (**x).id == id) {
             Some(x) => x,
             None => return Err(format!("could not find entry with ID {}", id)),
@@ -76,13 +76,25 @@ impl DB for FileDB {
         to_update.first_name = e.first_name;
         to_update.last_name = e.last_name;
         to_update.phone = e.phone;
-        to_update.address = e.address;
-        to_update.e_mail = e.e_mail;
+        if e.address.eq("--") {
+            to_update.address = "".to_string();
+        } else {
+            to_update.address = e.address;
+        }
+        if e.e_mail.eq("--") {
+            to_update.e_mail = "".to_string();
+        } else {
+            to_update.e_mail = e.e_mail;
+        }
         to_update.updated_at = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        self.save()
+        let return_entry: Entry = to_update.clone();
+        match self.save() {
+            Ok(()) => Ok(return_entry),
+            Err(msg) => Err(msg)
+        }
     }
 
     fn delete(&mut self, id: u16) -> Result<Entry, String> {
